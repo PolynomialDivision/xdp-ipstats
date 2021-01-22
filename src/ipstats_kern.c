@@ -17,6 +17,15 @@
 #define XDP_ACTION_MAX (XDP_REDIRECT + 1)
 #endif
 
+#ifndef VLAN_MAX_DEPTH
+#define VLAN_MAX_DEPTH 2
+#endif
+
+struct vlan_hdr {
+	__be16	h_vlan_TCI;
+	__be16	h_vlan_encapsulated_proto;
+};
+
 struct ip_stats_rec {
 	__u64 ipv4_rx_packets;
 	__u64 ipv4_rx_bytes;
@@ -31,11 +40,35 @@ struct bpf_map_def SEC("maps") ip_stats_map = {
 	.max_entries = XDP_ACTION_MAX,
 };
 
+static __always_inline int proto_is_vlan(__u16 h_proto)
+{
+	/* copied from xdp-tutorial */
+	return !!(h_proto == bpf_htons(ETH_P_8021Q) ||
+		  h_proto == bpf_htons(ETH_P_8021AD));
+}
+
 SEC("xdp-ip-stats")
 int ip_analyzer(struct xdp_md *ctx)
 {
 	void *data_end = (void *)(long)ctx->data_end;
 	void *data     = (void *)(long)ctx->data;
+	struct vlan_hdr *vlh;
+	__u16 h_proto;
+	int i;
+
+	/* copied from xdp-tutorial */
+	#pragma unroll
+		for (i = 0; i < VLAN_MAX_DEPTH; i++) {
+		if (!proto_is_vlan(h_proto))
+			break;
+
+		if (vlh + 1 > data_end)
+			break;
+
+		h_proto = vlh->h_vlan_encapsulated_proto;
+
+		vlh++;
+	}
 
 	struct ethhdr *ehdr = data;
 	if (ehdr + 1 > data_end)
