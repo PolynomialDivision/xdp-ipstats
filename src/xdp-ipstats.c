@@ -141,7 +141,7 @@ static bool map_collect(int fd, __u32 map_type, __u32 key, struct record *rec)
 static void stats_collect(int map_fd, __u32 map_type,
 			  struct stats_record *stats_rec)
 {
-	__u32 key = XDP_PASS;
+	__u32 key = 0;
 
 	map_collect(map_fd, map_type, key, &stats_rec->stats[0]);
 }

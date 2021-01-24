@@ -13,10 +13,6 @@
 #include <linux/tcp.h>
 #include <linux/in.h>
 
-#ifndef XDP_ACTION_MAX
-#define XDP_ACTION_MAX (XDP_REDIRECT + 1)
-#endif
-
 #ifndef VLAN_MAX_DEPTH
 #define VLAN_MAX_DEPTH 2
 #endif
@@ -37,7 +33,7 @@ struct bpf_map_def SEC("maps") ip_stats_map = {
 	.type        = BPF_MAP_TYPE_ARRAY,
 	.key_size    = sizeof(__u32),
 	.value_size  = sizeof(struct ip_stats_rec),
-	.max_entries = XDP_ACTION_MAX,
+	.max_entries = 1,
 };
 
 static __always_inline int proto_is_vlan(__u16 h_proto)
@@ -74,8 +70,8 @@ int ip_analyzer(struct xdp_md *ctx)
 	if (ehdr + 1 > data_end)
 		goto out;
 
-	__u32 action = XDP_PASS;
-	struct ip_stats_rec *rec = bpf_map_lookup_elem(&ip_stats_map, &action);
+	__u32 idx = 0;
+	struct ip_stats_rec *rec = bpf_map_lookup_elem(&ip_stats_map, &idx);
 	if (!rec)
 		goto out;
 
