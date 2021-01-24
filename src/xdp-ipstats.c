@@ -171,7 +171,7 @@ main(int argc, char **argv)
 		.map_want = {
 			.key_size = sizeof(__u32),
 			.value_size = sizeof(struct ip_stats_rec),
-			.max_entries = XDP_ACTION_MAX,
+			.max_entries = 1,
 		},
 	};
 	int interval = 2;
